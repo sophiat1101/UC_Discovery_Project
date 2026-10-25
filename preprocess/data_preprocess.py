@@ -6,7 +6,8 @@ import pandas as pd
 from scipy.sparse import issparse
 import warnings
 warnings.filterwarnings("ignore", message=".*encountered in (vecdot|matmul)", category=RuntimeWarning)
-
+from pathlib import Path
+import matplotlib.pyplot as plt
 
 # function load data
 def loadData(mtxPath, genePath, barcodePath):
@@ -50,10 +51,11 @@ def qualityCheck(adata):
     print(adata.obs[qc].describe(percentiles = [0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]))
 
     # violin plot of qc metrics
-    sc.pl.violin(adata, ["n_genes_by_counts", "total_counts", "pct_counts_mt"], jitter = 0.4, stripplot = False, multi_panel= True)
+    sc.pl.violin(adata, ["n_genes_by_counts", "total_counts", "pct_counts_mt"], jitter = 0.4, stripplot = False, multi_panel= True, show=False)
+    plt.savefig(str(script_dir / "figures/qc_violin.png"), dpi=300, bbox_inches='tight')
+    plt.close()
 
     # checking how low quality cells there are
-
     print(f"Total Cells: {adata.n_obs}")
     print(f"Cells with <200 genes: {(adata.obs.n_genes_by_counts < 200).sum()}")
     print(f"Cells with >5000 genes: {(adata.obs.n_genes_by_counts > 5000).sum()}")
@@ -103,17 +105,26 @@ def runPCA(adata, nComps = 50, scale = True):
     sc.pp.pca(adata, n_comps = nComps)
 
     varExplained = adata.uns["pca"]["variance_ratio"]
-    sc.pl.pca_variance_ratio(adata, n_pcs=50, log=True)
+    sc.pl.pca_variance_ratio(adata, n_pcs=50, log=True, show=False)
+    plt.savefig(str(script_dir / "figures/pca_expl_var.png"), dpi=300, bbox_inches='tight')
+    plt.close()
 
     return adata
 
 ### RUNNING ON EPITHELIAL TISSUE
 
-mtxPath = "../../data/gene_sorted-Epi.matrix.mtx"
-genePath = "../../data/Epi.genes.tsv"
-barcodePath = "../../data/Epi.barcodes2.tsv"
+script_dir = Path(__file__).resolve().parent
+project_dir = script_dir.parent
+
+mtxPath = script_dir / "data/gene_sorted-Epi.matrix.mtx"
+genePath = script_dir / "data/Epi.genes.tsv"
+barcodePath = script_dir / "data/Epi.barcodes2.tsv"
+
+print("Reading in 10X files...")
 
 adata = loadData(mtxPath, genePath, barcodePath)
+
+print("Assessing data quality...")
 
 qualityCheck(adata)
 
@@ -121,8 +132,14 @@ adata = filterCells(adata)
 
 adata = normalize(adata, 1000, 2000)
 
-adata.write_h5ad("../processed_data/uc_Epi_preprocessed_noPCA.h5ad", compression = "gzip")
+print("Data filtered and normalized, saving data object...")
+
+adata.write_h5ad(str(project_dir / "processed_data/uc_Epi_preprocessed_noPCA.h5ad"), compression = "gzip")
+
+print("Computing PCs, saving second data object...")
 
 adata_pca = runPCA(adata)
 
-adata_pca.write_h5ad("../processed_data/uc_Epi_preprocessed_PCA.h5ad", compression = "gzip")
+adata_pca.write_h5ad(str(project_dir / "processed_data/uc_Epi_preprocessed_PCA.h5ad"), compression = "gzip")
+
+print("Done!")
