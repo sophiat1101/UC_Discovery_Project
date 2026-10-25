@@ -51,8 +51,18 @@ def qualityCheck(adata):
     print(adata.obs[qc].describe(percentiles = [0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]))
 
     # violin plot of qc metrics
-    sc.pl.violin(adata, ["n_genes_by_counts", "total_counts", "pct_counts_mt"], jitter = 0.4, stripplot = False, multi_panel= True, show=False)
-    plt.savefig(str(script_dir / "figures/qc_violin.png"), dpi=300, bbox_inches='tight')
+    v = sc.pl.violin(adata, ["n_genes_by_counts", "total_counts", "pct_counts_mt"], stripplot=False,
+                     multi_panel=True, show=False)
+    titles = ["Genes per Cell", "Total Counts", "Mitochondrial Reads"]
+    ylabels = ["Number of Genes", "Counts", "Percent (%)"]
+
+    for ax, title, label in zip(v.axes.flat, titles, ylabels):
+        ax.set_title(title)
+        ax.set_ylabel(label)
+        ax.set_xlabel("")
+
+    v.fig.suptitle("scRNA-Seq QC Metrics", fontsize=14, y=1.05)
+    v.fig.savefig(str(script_dir / "figures/qc_violin.png"), dpi=300, bbox_inches="tight")
     plt.close()
 
     # checking how low quality cells there are
@@ -105,7 +115,12 @@ def runPCA(adata, nComps = 50, scale = True):
     sc.pp.pca(adata, n_comps = nComps)
 
     varExplained = adata.uns["pca"]["variance_ratio"]
+
     sc.pl.pca_variance_ratio(adata, n_pcs=50, log=True, show=False)
+    plt.ylabel("Principal Components")
+    plt.xlabel("Fraction of Total Variance Explained")
+    plt.title("PCA Scree Plot")
+
     plt.savefig(str(script_dir / "figures/pca_expl_var.png"), dpi=300, bbox_inches='tight')
     plt.close()
 
@@ -116,9 +131,9 @@ def runPCA(adata, nComps = 50, scale = True):
 script_dir = Path(__file__).resolve().parent
 project_dir = script_dir.parent
 
-mtxPath = script_dir / "data/gene_sorted-Epi.matrix.mtx"
-genePath = script_dir / "data/Epi.genes.tsv"
-barcodePath = script_dir / "data/Epi.barcodes2.tsv"
+mtxPath = project_dir / "data/gene_sorted-Epi.matrix.mtx"
+genePath = project_dir / "data/Epi.genes.tsv"
+barcodePath = project_dir / "data/Epi.barcodes2.tsv"
 
 print("Reading in 10X files...")
 
