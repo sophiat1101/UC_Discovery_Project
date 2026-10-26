@@ -151,6 +151,8 @@ def runHarmony(adata, batch_key = "Subject"):
 
 script_dir = Path(__file__).resolve().parent
 project_dir = script_dir.parent
+process_dir = project_dir / "preprocessed_data"
+process_dir.mkdir(exist_ok = True, parents = True)
 
 mtxPath = project_dir / "data/gene_sorted-Epi.matrix.mtx"
 genePath = project_dir / "data/Epi.genes.tsv"
@@ -171,13 +173,13 @@ adata = normalize(adata)
 
 print("Data filtered and normalized, saving data object...")
 
-adata.write_h5ad(str(project_dir / "processed_data/uc_Epi_preprocessed_noPCA.h5ad"), compression = "gzip")
+adata.write_h5ad(process_dir / "uc_Epi_preprocessed_noPCA.h5ad", compression = "gzip")
 
 print("Computing PCs and Harmony correction, saving second data object...")
 
 adata_pca = runPCA(adata)
 adata_pca = runHarmony(adata_pca)
 
-adata_pca.write_h5ad(str(project_dir / "processed_data/uc_Epi_preprocessed_PCA.h5ad"), compression = "gzip")
+adata_pca.write_h5ad(process_dir / "uc_Epi_preprocessed_PCA.h5ad", compression = "gzip")
 
 print("Done!")

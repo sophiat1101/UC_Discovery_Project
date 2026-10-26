@@ -12,7 +12,7 @@ from cell_type_grouping import groupCellTypes
 
 script_dir = Path(__file__).resolve().parent
 project_dir = script_dir.parent
-processed_dir = project_dir / "processed_data"
+processed_dir = project_dir / "preprocessed_data"
 figures_dir = script_dir / "figures"
 figures_dir.mkdir(parents=True, exist_ok=True)
 
@@ -120,8 +120,8 @@ adata.uns["leiden_params"] = {"n_neighbors": neighbors, "n_pcs": pcs, "resolutio
 
 # writing object with clusters, neighbor group and tSNE -- contains leiden column, tSNE coordinates, neighbor graph,
 # and chosen parameters for leiden
-adata.write_h5ad(processed_dir / "uc_Epi_clustered.h5ad", compression = "gzip")
+adata.write_h5ad(script_dir / "uc_Epi_clustered.h5ad", compression = "gzip")
 
 # making csv with cell barcode mapped to leiden cluster table with original and grouped cell type, patient id and disease state
-(adata.obs[["leiden", "Cluster", "cell_type_group", "Subject", "Health"]].rename_axis("barcode").to_csv(processed_dir / "uc_Epi_clustered.csv", index = False))
+(adata.obs[["leiden", "Cluster", "cell_type_group", "Subject", "Health"]].rename_axis("barcode").to_csv(script_dir / "uc_Epi_clustered.csv"))
 
