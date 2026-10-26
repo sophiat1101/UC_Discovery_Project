@@ -2,3 +2,4 @@ data/
 .venv/
 .DS_Store
 __pycache__/
+processed_data/*.h5ad
