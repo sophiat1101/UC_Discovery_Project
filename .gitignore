@@ -1,5 +1,10 @@
+# ignores all dirs with this name
 data/
+
+# different naming convesions for venvs
 .venv/
+ML_project/
+
 .DS_Store
 __pycache__/
 *.h5ad
