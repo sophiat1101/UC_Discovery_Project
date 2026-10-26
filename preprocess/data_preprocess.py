@@ -4,6 +4,7 @@ import numpy as np
 import scanpy as sc
 import pandas as pd
 from scipy.sparse import issparse
+import harmonypy
 import warnings
 warnings.filterwarnings("ignore", message=".*encountered in (vecdot|matmul)", category=RuntimeWarning)
 from pathlib import Path
@@ -25,6 +26,18 @@ def loadData(mtxPath, genePath, barcodePath):
 
     # getting sample data for cells -- in format Ex. N7.EpiA.barcode --> dropping barcode to keep N7.EpiA
     adata.obs["samples"] = adata.obs_names.str.rsplit(".", n=1).str[0]
+
+    return adata
+
+
+# adding meta data to adata
+def addMetaData(adata, metaPath):
+
+    meta = pd.read_csv(metaPath, sep = "\t", skiprows = [1], index_col = "NAME", usecols = ["NAME", "Cluster",
+                                                                                            "Subject", "Health"])
+
+    for col in ["Cluster", "Subject", "Health"]:
+        adata.obs[col] = meta.loc[adata.obs_names, col].astype("category").values
 
     return adata
 
@@ -73,7 +86,7 @@ def qualityCheck(adata):
 
 
 # filtering cells based on cutoffs
-def filterCells(adata, minGeneCutoff = 200, minCellCutoff = 3, mitoCutoff = 0.2):
+def filterCells(adata, minGeneCutoff = 200, minCellCutoff = 3, mitoCutoff = 20):
 
     # filtering low expression cells and cells with too much mitochondrial genes
     sc.pp.filter_cells(adata, min_genes = minGeneCutoff)
@@ -82,9 +95,8 @@ def filterCells(adata, minGeneCutoff = 200, minCellCutoff = 3, mitoCutoff = 0.2)
 
     return adata
 
-
-# normalizing and transforming gene counts
-def normalize(adata, normalizingTargetNum, highlyVarGenesNum):
+# normalizing and transforming gene counts - batch aware so genes high in only one patient are picked
+def normalize(adata, normalizingTargetNum = 1e4, highlyVarGenesNum = 2000, batch_key = "Subject"):
 
     # saving raw counts
     adata.layers["counts"] = adata.X.copy()
@@ -99,7 +111,7 @@ def normalize(adata, normalizingTargetNum, highlyVarGenesNum):
     adata.raw = adata
 
     # finding highly variable genes
-    sc.pp.highly_variable_genes(adata, n_top_genes=highlyVarGenesNum)
+    sc.pp.highly_variable_genes(adata, n_top_genes=highlyVarGenesNum, batch_key = batch_key)
 
     # filtering to only highly variable genes
     adata = adata[:, adata.var.highly_variable].copy()
@@ -112,17 +124,26 @@ def runPCA(adata, nComps = 50, scale = True):
     if scale:
         sc.pp.scale(adata, max_value = 10)
 
-    sc.pp.pca(adata, n_comps = nComps)
+    sc.pp.pca(adata, n_comps = nComps, random_state = 42)
 
     varExplained = adata.uns["pca"]["variance_ratio"]
 
     sc.pl.pca_variance_ratio(adata, n_pcs=50, log=True, show=False)
-    plt.ylabel("Principal Components")
-    plt.xlabel("Fraction of Total Variance Explained")
+    plt.ylabel("Fraction of Total Variance Explained")
+    plt.xlabel("Principal Components")
     plt.title("PCA Scree Plot")
 
     plt.savefig(str(script_dir / "figures/pca_expl_var.png"), dpi=300, bbox_inches='tight')
     plt.close()
+
+    return adata
+
+# batch correcting PC's by patient
+def runHarmony(adata, batch_key = "Subject"):
+
+    ho = harmonypy.run_harmony(adata.obsm["X_pca"], adata.obs, batch_key, random_state = 42)
+    Z = ho.Z_corr
+    adata.obsm["X_pca_harmony"] = Z if Z.shape[0] == adata.n_obs else Z.T
 
     return adata
 
@@ -134,26 +155,28 @@ project_dir = script_dir.parent
 mtxPath = project_dir / "data/gene_sorted-Epi.matrix.mtx"
 genePath = project_dir / "data/Epi.genes.tsv"
 barcodePath = project_dir / "data/Epi.barcodes2.tsv"
+metaPath = project_dir / "data/metaData.txt"
 
-print("Reading in 10X files...")
+print("Reading in 10X files and metadata...")
 
 adata = loadData(mtxPath, genePath, barcodePath)
+adata = addMetaData(adata, metaPath)
 
 print("Assessing data quality...")
 
 qualityCheck(adata)
 
 adata = filterCells(adata)
-
-adata = normalize(adata, 1000, 2000)
+adata = normalize(adata)
 
 print("Data filtered and normalized, saving data object...")
 
 adata.write_h5ad(str(project_dir / "processed_data/uc_Epi_preprocessed_noPCA.h5ad"), compression = "gzip")
 
-print("Computing PCs, saving second data object...")
+print("Computing PCs and Harmony correction, saving second data object...")
 
 adata_pca = runPCA(adata)
+adata_pca = runHarmony(adata_pca)
 
 adata_pca.write_h5ad(str(project_dir / "processed_data/uc_Epi_preprocessed_PCA.h5ad"), compression = "gzip")
 
