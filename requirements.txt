@@ -11,6 +11,7 @@ fonttools==4.67.0
 formulaic==1.2.2
 google-crc32c==1.9.0
 h5py==3.16.0
+harmonypy==2.1.0
 igraph==1.0.0
 interface_meta==2.0.1
 joblib==1.6.0
