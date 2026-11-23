@@ -16,6 +16,6 @@ This project aims to investigate the genetic drivers of ulcerative colitis, an i
 
 ### Dataset 
 123006 cells from epithelial tissue,, 21784 genes, 3 disease states (healthy, inflammatory UC tissue, non-inflammatory UC tissue)
-18 diseased patients, 12 healthy patients
+across 18 diseased patients and 12 healthy patients
 
 Source data from the Broad institute: https://singlecell.broadinstitute.org/single_cell/study/SCP259/intra-and-inter-cellular-rewiring-of-the-human-colon-during-ulcerative-colitis?label=Best4%2B%20Enterocytes&cluster=Epithelial%20tSNE&spatialGroups=--&annotation=Cluster--group--study&subsample=100000
