@@ -2,7 +2,7 @@
 
 ### Project Overview
 #### Investigation Goals
-This project aims to investigate the genetic drivers of ulcerative colitis, an inflammatory bowel disease, through the use of both traditional differential expression analysis (DEA) and unsupervised ML techniques (classifier models). Comparison will be made between the disease relevant genes and cell types derived from both methodologies.
+This project aims to investigate the genetic drivers of ulcerative colitis, an inflammatory bowel disease, through the use of both traditional differential expression analysis (DEA) derived from unsupervised cluster labels and supervised ML techniques (classifier models). Comparison will be made between the disease relevant genes and cell types observed through both methodologies.
 
 ### Dataset 
 123006 cells from epithelial tissue,, 21784 genes, 3 disease states (healthy, inflammatory UC tissue, non-inflammatory UC tissue)
