@@ -20,5 +20,5 @@ Source data from the Broad institute: https://singlecell.broadinstitute.org/sing
 7. Classifier training/testing (cell type level psuedobulked samples, 1 model per cell type)
 8. Comparison of results between methods and literature review of top genes
 
-#### Repository structure notes
+### Repository structure notes
 All AnnData objects can be downloaded from git release
